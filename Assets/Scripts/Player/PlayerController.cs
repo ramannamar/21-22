@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.XR;
 
 public class PlayerController : MonoBehaviour
 {
@@ -31,11 +33,15 @@ public class PlayerController : MonoBehaviour
 
     Rigidbody rb;
 
+    public BonusCheck bonusCheck;
+
+
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
         rb.freezeRotation = true;
         readyToJump = true;
+            
     }
 
     private void Update()
@@ -44,6 +50,7 @@ public class PlayerController : MonoBehaviour
 
         PlayerInput();
         SpeedControl();
+        
 
         if (grounded)
         rb.drag = groundDrag;
@@ -51,6 +58,30 @@ public class PlayerController : MonoBehaviour
         rb.drag = 0;
         
     }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("BeastBonus"))
+        {
+            StartCoroutine(RageMode());
+        }
+    }
+
+    private IEnumerator RageMode()
+    {
+        if (bonusCheck != null)
+        {
+            moveSpeed = 7f;
+            bonusCheck.isActive = true;
+
+            yield return new WaitForSeconds(10f);
+
+            moveSpeed = 5f;
+            bonusCheck.isActive = false;
+        }
+        
+    }
+
 
     private void FixedUpdate()
     {
