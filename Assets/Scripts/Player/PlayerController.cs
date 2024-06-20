@@ -16,6 +16,16 @@ public class PlayerController : MonoBehaviour
     public float airMultiplier;
     bool readyToJump;
 
+    [Header("Health Settings")]
+    public int maxHealth;
+    public int currentHealth;
+    public HealthBar healthBar;
+
+    private float damageCooldown = 0f;
+    private const float damageInterval = 1f;
+    private bool isInCombat = false;
+
+
     [Header("Key Settings")]
     public KeyCode jumpKey = KeyCode.Space;
 
@@ -35,14 +45,15 @@ public class PlayerController : MonoBehaviour
 
     public BonusCheck bonusCheck;
 
-
+   
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
         rb.freezeRotation = true;
         readyToJump = true;
-            
-    }
+        currentHealth = maxHealth;
+        healthBar.SetMaxHealth(maxHealth);
+    }   
 
     private void Update()
     {
@@ -56,8 +67,15 @@ public class PlayerController : MonoBehaviour
         rb.drag = groundDrag;
         else
         rb.drag = 0;
+
+        if (damageCooldown > 0)
+        damageCooldown -= Time.deltaTime;
         
     }
+    private void FixedUpdate()
+        {
+            MovePlayer();
+        }
 
     private void OnTriggerEnter(Collider other)
     {
@@ -82,11 +100,54 @@ public class PlayerController : MonoBehaviour
         
     }
 
-
-    private void FixedUpdate()
+    private void OnTriggerStay(Collider other)
     {
-        MovePlayer();
+        if (other.CompareTag("Enemy"))
+        {
+            if (!isInCombat)
+            {
+                isInCombat = true;
+                StartCoroutine(DamageOverTime());
+            }
+        }
     }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Enemy"))
+        {
+            isInCombat = false;
+            StopCoroutine(DamageOverTime());
+            damageCooldown = 0f;
+        }
+    }
+
+    private IEnumerator DamageOverTime()
+    {
+        while (isInCombat)
+        {
+            if (damageCooldown <= 0 && bonusCheck.isActive == false)
+            {
+                TakeDamage();
+                damageCooldown = damageInterval;
+            }
+            else
+            {
+                damageCooldown -= Time.deltaTime;
+            }
+
+            yield return null;
+        }
+    }
+
+    private void TakeDamage()
+    {
+        currentHealth -= 1;
+        healthBar.SetHealth(currentHealth);
+    }
+
+
+
 
     private void PlayerInput()
     {
