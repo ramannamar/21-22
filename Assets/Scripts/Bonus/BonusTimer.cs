@@ -5,16 +5,15 @@ using UnityEngine;
 public class BonusTimer : MonoBehaviour
 {
     public BonusCheck bonusCheck;
-    public GameObject bonusTimer;    
+    public GameObject bonusTimer;
     public Timer timerComponent;
 
-    private void Update()
+    private void Start()
     {
-        BonusTimerStart();
+        bonusCheck.BonusActiveChanged += OnBonusActiveChanged;
     }
 
-
-    private void BonusTimerStart()
+    private void OnBonusActiveChanged()
     {
         if (bonusCheck.isActive)
         {
@@ -24,17 +23,15 @@ public class BonusTimer : MonoBehaviour
         {
             timerComponent.time = 10f;
             timerComponent.Max = 10f;
+            bonusTimer.SetActive(false);
             StopCoroutine(TimerActive());
         }
-       
     }
 
     private IEnumerator TimerActive()
     {
         bonusTimer.SetActive(true);
-        
         yield return new WaitForSeconds(10);
-        
         bonusTimer.SetActive(false);
         StopCoroutine(TimerActive());
     }

@@ -11,6 +11,8 @@ public class EnemyController : MonoBehaviour
 
     public BonusCheck bonusCheck;
 
+
+
     //Patroling
     public Vector3 walkPoint;
     bool walkPointSet;
@@ -20,7 +22,8 @@ public class EnemyController : MonoBehaviour
     public bool playerInSightRange;
 
     public bool escape = false;
-    
+
+    public PlayerController playerController;
 
     private void Awake()
     {
@@ -40,16 +43,22 @@ public class EnemyController : MonoBehaviour
         
     }
 
-    public void SetEscape()
+    //private void OnTriggerStay(Collider other)
+    //{
+    //    if (other.CompareTag("Player"))
+    //    {
+    //        enemyAtm.DealDamage(playerAtm.gameObject);
+    //    }
+
+
+
+        public void SetEscape()
     {         
         if (bonusCheck.isActive == true)
-        {
             escape = true;
-        }
+        
         else 
-        {
-            escape = false;
-        }
+            escape = false;     
     }
 
     private void Patroling()

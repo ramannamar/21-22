@@ -8,24 +8,12 @@ public class PlayerController : MonoBehaviour
 {
     [Header("Movement Settings")]
     public float moveSpeed;
-
     public float groundDrag;
-
     public float jumpForce;
     public float jumpCooldown;
     public float airMultiplier;
-    bool readyToJump;
-
-    [Header("Health Settings")]
-    public int maxHealth;
-    public int currentHealth;
-    public HealthBar healthBar;
-
-    private float damageCooldown = 0f;
-    private const float damageInterval = 1f;
-    private bool isInCombat = false;
-
-
+    bool readyToJump; 
+    
     [Header("Key Settings")]
     public KeyCode jumpKey = KeyCode.Space;
 
@@ -33,26 +21,30 @@ public class PlayerController : MonoBehaviour
     public float playerHeight;
     public LayerMask whatIsGround;
     bool grounded;
-
     public Transform orientation;
 
     float horizontalInput;
     float verticalInput;
-
     Vector3 movementDirection;
 
     Rigidbody rb;
 
     public BonusCheck bonusCheck;
 
-   
+    public EnemyController enemyController;
+
+    private List<AttributesManager> enemiesInContact = new List<AttributesManager>();
+
+    public AttributesManager playerAtm;
+    public AttributesManager enemyAtm;
+
+
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
         rb.freezeRotation = true;
         readyToJump = true;
-        currentHealth = maxHealth;
-        healthBar.SetMaxHealth(maxHealth);
+        
     }   
 
     private void Update()
@@ -67,10 +59,7 @@ public class PlayerController : MonoBehaviour
         rb.drag = groundDrag;
         else
         rb.drag = 0;
-
-        if (damageCooldown > 0)
-        damageCooldown -= Time.deltaTime;
-        
+      
     }
     private void FixedUpdate()
         {
@@ -79,6 +68,15 @@ public class PlayerController : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        if (other.CompareTag("Enemy"))
+        {
+            AttributesManager enemyAtm = other.GetComponent<AttributesManager>();
+            if (enemyAtm != null)
+            {
+                enemiesInContact.Add(enemyAtm);
+            }
+        }
+
         if (other.CompareTag("BeastBonus"))
         {
             StartCoroutine(RageMode());
@@ -90,64 +88,43 @@ public class PlayerController : MonoBehaviour
         if (bonusCheck != null)
         {
             moveSpeed = 7f;
-            bonusCheck.isActive = true;
+            bonusCheck.SetBonusActive(true);
 
             yield return new WaitForSeconds(10f);
 
             moveSpeed = 5f;
-            bonusCheck.isActive = false;
+            bonusCheck.SetBonusActive(false);
         }
         
-    }
-
-    private void OnTriggerStay(Collider other)
-    {
-        if (other.CompareTag("Enemy"))
-        {
-            if (!isInCombat)
-            {
-                isInCombat = true;
-                StartCoroutine(DamageOverTime());
-            }
-        }
     }
 
     private void OnTriggerExit(Collider other)
     {
         if (other.CompareTag("Enemy"))
         {
-            isInCombat = false;
-            StopCoroutine(DamageOverTime());
-            damageCooldown = 0f;
+            AttributesManager enemyAtm = other.GetComponent<AttributesManager>();
+            if (enemiesInContact.Contains(enemyAtm))
+            {
+                enemiesInContact.Remove(enemyAtm);
+            }
         }
     }
 
-    private IEnumerator DamageOverTime()
+    private void OnTriggerStay(Collider other)
     {
-        while (isInCombat)
+        if (other.CompareTag("Enemy"))
         {
-            if (damageCooldown <= 0 && bonusCheck.isActive == false)
+            foreach (var enemyAtm in enemiesInContact)
             {
-                TakeDamage();
-                damageCooldown = damageInterval;
-            }
-            else
-            {
-                damageCooldown -= Time.deltaTime;
+                enemyAtm.DealDamage(gameObject);
             }
 
-            yield return null;
+            if (bonusCheck.isActive)
+            {
+                playerAtm.DealDamage(other.gameObject);
+            }
         }
     }
-
-    private void TakeDamage()
-    {
-        currentHealth -= 1;
-        healthBar.SetHealth(currentHealth);
-    }
-
-
-
 
     private void PlayerInput()
     {
